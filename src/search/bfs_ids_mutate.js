@@ -7,13 +7,9 @@ const goalState = [
 export function startBfsSearch(grid) {
     let Queue = [];
     let visitedNodes = [];
-    Queue.push({nodes: grid, path: "", depth: 0});
+    Queue.push({nodes: grid, path: "", depth: 0, g: 0, h: 0, seen: false});
 
     while (Queue.length > 0) {
-        let block0Index = Queue[0].nodes.indexOf(0);
-        let moves = getPossibleMoves(block0Index);
-        let childNodes = getChildNodes(Queue[0], block0Index, moves);
-
         let visited = Queue.shift();
         visitedNodes.push(visited);
 
@@ -23,11 +19,15 @@ export function startBfsSearch(grid) {
             return visitedNodes.pop();
         }
 
-        for (let i = 0, childNodesLength = childNodes.length; i < childNodesLength; i++) {
+        let block0Index = visited.nodes.indexOf(0);
+        let moves = getPossibleMoves(block0Index);
+        let childNodes = getChildNodes(visited, block0Index, moves);
+
+        for (let i = 0; i < childNodes.length; i++) {
             let nodeExist = false;
             nodeExist = checkNodeExist(Queue, childNodes[i]);
             if (!nodeExist) {
-                nodeExist = checkNodeVisited(visitedNodes, childNodes[i]);
+                nodeExist = checkNodeExist(visitedNodes, childNodes[i]);
             }
 
             if (!nodeExist) {
@@ -52,21 +52,34 @@ export function startIdsSearch(grid) {
 }
 
 function startDlsSearch(grid, depthLimit) {
-    let Stack = [];
+    let stack = [];
     let visitedNodes = [];
-    Stack.push({nodes: grid, path: "", depth: 0});
-    while (Stack.length > 0) {
-        let currentState = Stack.pop();
-        let block0Index = currentState.nodes.indexOf(0);
-        let moves = getPossibleMoves(block0Index);
-        if (!checkNodeVisited(visitedNodes, currentState)) {
-            visitedNodes.push(currentState);
-            if (checkEqualArray(currentState.nodes, goalState)) {
-                return currentState;
-            }
-            if (currentState.depth < depthLimit) {
-                let childNodes = getChildNodes(currentState, block0Index, moves);
-                Stack.push(...childNodes);
+    stack.push({nodes: grid, path: "", depth: 0, g: 0, h: 0, seen: false});
+
+    while (stack.length > 0) {
+        let currentState = stack.pop();
+        visitedNodes.push(currentState);
+        if (checkEqualArray(currentState.nodes, goalState)) {
+            return currentState;
+        }
+
+        if (currentState.depth < depthLimit) {
+            let block0Index = currentState.nodes.indexOf(0);
+            let moves = getPossibleMoves(block0Index);
+            let childNodes = getChildNodes(currentState, block0Index, moves);
+
+            for (let i = 0; i < childNodes.length; i++) {
+                let nodeExist = false;
+                for (let j = 0; j < visitedNodes.length; j++) {
+                    if (checkEqualArray(childNodes[i].nodes, visitedNodes[j].nodes) &&
+                        childNodes[i].depth === visitedNodes[j].depth) {
+                        nodeExist = true;
+                    }
+                }
+
+                if (!nodeExist) {
+                    stack.push(childNodes[i]);
+                }
             }
         }
     }
@@ -77,13 +90,13 @@ export function startMutateSearch(grid) {
     let queue2 = [];
     let visitedNodes1 = [];
     let visitedNodes2 = [];
-    queue1.push({nodes: grid, path: "", depth: 0});
-    queue2.push({nodes: goalState, path: "", depth: 0});
+    queue1.push({nodes: grid, path: "", depth: 0, g: 0, h: 0, seen: false});
+    queue2.push({nodes: goalState, path: "", depth: 0, g: 0, h: 0, seen: false});
 
     while (queue1.length > 0 && queue2.length > 0) {
 
         let currentState1 = queue1.shift();
-        if (!checkNodeVisited(visitedNodes1, currentState1)) {
+        if (!checkNodeExist(visitedNodes1, currentState1)) {
             visitedNodes1.push(currentState1);
             if (checkNodeExist(visitedNodes2, currentState1)) {
                 let nodeFromQ2 = findNode(visitedNodes2, currentState1.nodes);
@@ -110,7 +123,7 @@ export function startMutateSearch(grid) {
         }
 
         let currentState2 = queue2.shift();
-        if (!checkNodeVisited(visitedNodes2, currentState2)) {
+        if (!checkNodeExist(visitedNodes2, currentState2)) {
             visitedNodes2.push(currentState2);
             if (checkNodeExist(visitedNodes1, currentState2)) {
                 let nodeFromQ1 = findNode(visitedNodes1, currentState2.nodes);
@@ -127,7 +140,6 @@ export function startMutateSearch(grid) {
                     .join(',');
                 nodeFromQ1.path = path + ' , ' + path2;
                 console.log("====== FOUND MUTATE");
-                console.log('path : ' + nodeFromQ1.path);
                 return nodeFromQ1;
             }
             let block0Index = currentState2.nodes.indexOf(0);
@@ -138,6 +150,53 @@ export function startMutateSearch(grid) {
 
     }
 
+}
+
+export function startAStareSearch(grid) {
+    let array = [];
+
+    array.push({nodes: grid, path: "", depth: 0, g: 0, h: 0, seen: false});
+
+    while (array.length > 0) {
+        let bestNode = getBestNode(array);
+        bestNode.seen = true;
+
+        if (checkEqualArray(bestNode.nodes, goalState)) {
+            console.log("====== FOUND A*");
+            console.log('visitedNodes : ' + array.length);
+            return bestNode;
+        }
+
+        let block0Index = bestNode.nodes.indexOf(0);
+        let moves = getPossibleMoves(block0Index);
+        let childNodes = getChildNodes(bestNode, block0Index, moves);
+
+        for (let i = 0; i < childNodes.length; i++) {
+            let nodeExist = false;
+            for (let j = 0; j < array.length; j++) {
+                if (checkEqualArray(childNodes[i].nodes, array[j].nodes) &&
+                    childNodes[i].g + childNodes[i].h === array[j].g + array[j].h) {
+                    nodeExist = true;
+                }
+            }
+
+            if (!nodeExist) {
+                array.push(childNodes[i]);
+            }
+        }
+    }
+}
+
+function getBestNode(array) {
+    let minNode = null;
+    for (let i = 0; i < array.length; i++) {
+        if (!array[i].seen) {
+            if (minNode === null || array[i].g + array[i].h < minNode.g + minNode.h) {
+                minNode = array[i];
+            }
+        }
+    }
+    return minNode;
 }
 
 function getChildNodes(currentState, block0Index, moves) {
@@ -153,8 +212,9 @@ function swap(value, currentPath, currentDepth, swapFrom, swapTo, move) {
     let temp = value[swapTo];
     value[swapTo] = 0;
     value[swapFrom] = temp;
-    let newPath = currentPath ? currentPath + ',' + move : move
-    return {nodes: value, path: newPath, depth: currentDepth + 1};
+    let newPath = currentPath ? currentPath + ',' + move : move;
+    let h = getH(value);
+    return {nodes: value, path: newPath, depth: currentDepth + 1, g: currentDepth + 1, h: h, seen: false};
 }
 
 function getPossibleMoves(value) {
@@ -173,6 +233,16 @@ function getPossibleMoves(value) {
     return places[value];
 }
 
+function getH(array) {
+    let counter = 0;
+    for (let i = 0; i < array.length; i++) {
+        if (array[i] !== goalState[i]) {
+            counter++;
+        }
+    }
+    return counter;
+}
+
 function findNode(nodes, array) {
     for (let i = 0; i < nodes.length; i++) {
         if (checkEqualArray(nodes[i].nodes, array)) {
@@ -185,15 +255,6 @@ function findNode(nodes, array) {
 function checkNodeExist(nodes, checkNode) {
     for (let j = 0; j < nodes.length; j++) {
         if (checkEqualArray(nodes[j].nodes, checkNode.nodes)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-function checkNodeVisited(visitedNodes, checkNode) {
-    for (let j = 0, visitedNodesLength = visitedNodes.length; j < visitedNodesLength; j++) {
-        if (checkEqualArray(visitedNodes[j].nodes, checkNode.nodes)) {
             return true;
         }
     }

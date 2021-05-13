@@ -15,6 +15,7 @@ const _Grid = ({ className, grid, squareShift }) => (
 
 const Grid = styled(_Grid)`
   width: 270px;
+  margin-top: 60px;
   padding: 15px;
   border-radius: 10px;
   background-color: ${STYLE.primaryColor};

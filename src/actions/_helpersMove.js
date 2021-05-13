@@ -1,5 +1,5 @@
 import CODE_KEY from '../constants/keys'
-import {startBfsSearch, startIdsSearch, startMutateSearch} from "../search/bfs_ids_mutate";
+import {startAStareSearch, startBfsSearch, startIdsSearch, startMutateSearch} from "../search/bfs_ids_mutate";
 
 const symbolToMove = s => {
     // eslint-disable-next-line default-case
@@ -26,10 +26,12 @@ const solveGrid = (grid, searchMethod) => {
         result = startBfsSearch(grid);
     } else if (searchMethod === 'ids') {
         result = startIdsSearch(grid);
-    } else {
+    } else if (searchMethod === 'mutate') {
         result = startMutateSearch(grid);
+    } else {
+        result = startAStareSearch(grid);
     }
-    console.log(result);
+
     return {
         ...result,
         moves: result.path.split(',').map(move => symbolToMove(move.trim()))

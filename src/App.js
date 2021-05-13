@@ -48,8 +48,6 @@ const _resolveCode = (code, actions) => {
         case CODE_KEY.ENTER:
             actions.start();
             break;
-        default:
-            console.log(code);
     }
 }
 
@@ -83,7 +81,7 @@ const App = ({
     return (
         <div className={className}>
             <div className='mid'>
-                <Title img={titleImg}/>
+                {/*<Title img={titleImg}/>*/}
                 <Grid grid={grid} squareShift={90}/>
 
                 <ButtonSet margin={5}>
@@ -105,6 +103,12 @@ const App = ({
                         onClick={() => {
                             setSearchMethod('mutate');
                         }}> MUTATE </Button>
+                    <Button
+                        icon={''}
+                        active={searchMethod === 'a*'}
+                        onClick={() => {
+                            setSearchMethod('a*');
+                        }}> A* </Button>
                 </ButtonSet>
 
                 <ButtonSet margin={10}>
